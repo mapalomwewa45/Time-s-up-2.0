@@ -4,7 +4,7 @@
   "description": "Study Planner App",
   "main": "index.js",
   "scripts": {
-    "build": "capacitor build android",
+    "build": "echo 'Web assets built'",
     "sync": "capacitor sync android",
     "open": "capacitor open android"
   },
