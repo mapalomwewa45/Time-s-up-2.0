@@ -1,9 +1,14 @@
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+
 // Data Storage
 let appData = {
     tasks: [],
     deadlines: [],
     notes: []
 };
+
+const DATA_FILE = 'timesup_data.json';
+const DATA_DIRECTORY = Directory.Documents;
 
 // Initialize app
 document.addEventListener('DOMContentLoaded', () => {
@@ -275,17 +280,45 @@ function renderAllItems() {
     renderNotes();
 }
 
-function saveData() {
-    localStorage.setItem('timesUpData', JSON.stringify(appData));
+// Save data to phone storage using Capacitor Filesystem API
+async function saveData() {
+    try {
+        const jsonString = JSON.stringify(appData);
+        await Filesystem.writeFile({
+            path: DATA_FILE,
+            data: jsonString,
+            directory: DATA_DIRECTORY,
+            encoding: Encoding.UTF8
+        });
+        console.log('Data saved to phone storage successfully');
+    } catch (error) {
+        console.error('Error saving data:', error);
+        // Fallback to localStorage if Capacitor fails
+        localStorage.setItem('timesUpData', JSON.stringify(appData));
+    }
 }
 
-function loadData() {
-    const saved = localStorage.getItem('timesUpData');
-    if (saved) {
-        try {
-            appData = JSON.parse(saved);
-        } catch (e) {
-            console.error('Error loading data:', e);
+// Load data from phone storage using Capacitor Filesystem API
+async function loadData() {
+    try {
+        const result = await Filesystem.readFile({
+            path: DATA_FILE,
+            directory: DATA_DIRECTORY,
+            encoding: Encoding.UTF8
+        });
+        appData = JSON.parse(result.data);
+        console.log('Data loaded from phone storage successfully');
+    } catch (error) {
+        console.log('No saved data found, trying localStorage fallback');
+        // Fallback to localStorage
+        const saved = localStorage.getItem('timesUpData');
+        if (saved) {
+            try {
+                appData = JSON.parse(saved);
+                console.log('Data loaded from localStorage');
+            } catch (e) {
+                console.error('Error parsing localStorage:', e);
+            }
         }
     }
 }
