@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Time's Up - Study Planner</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>⏰ Time's Up</h1>
+            <p class="subtitle">Your Study Planner</p>
+        </header>
+
+        <!-- Navigation Tabs -->
+        <nav class="nav-tabs">
+            <button class="tab-btn active" data-tab="tasks">📋 Tasks</button>
+            <button class="tab-btn" data-tab="deadlines">📅 Deadlines</button>
+            <button class="tab-btn" data-tab="notes">📝 Notes</button>
+        </nav>
+
+        <!-- Tasks Section -->
+        <section id="tasks" class="tab-content active">
+            <div class="section-header">
+                <h2>Study Tasks</h2>
+                <button class="add-btn" onclick="openAddTaskModal()">+ Add Task</button>
+            </div>
+            <div id="tasksList" class="items-list">
+                <p class="empty-state">No tasks yet. Add one to get started!</p>
+            </div>
+        </section>
+
+        <!-- Deadlines Section -->
+        <section id="deadlines" class="tab-content">
+            <div class="section-header">
+                <h2>Upcoming Deadlines</h2>
+                <button class="add-btn" onclick="openAddDeadlineModal()">+ Add Deadline</button>
+            </div>
+            <div id="deadlinesList" class="items-list">
+                <p class="empty-state">No deadlines yet. Add one to stay on track!</p>
+            </div>
+        </section>
+
+        <!-- Notes Section -->
+        <section id="notes" class="tab-content">
+            <div class="section-header">
+                <h2>Study Notes</h2>
+                <button class="add-btn" onclick="openAddNoteModal()">+ Add Note</button>
+            </div>
+            <div id="notesList" class="items-list">
+                <p class="empty-state">No notes yet. Create one to remember important info!</p>
+            </div>
+        </section>
+    </div>
+
+    <!-- Add Task Modal -->
+    <div id="addTaskModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Task</h2>
+                <button class="close-btn" onclick="closeAddTaskModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="taskTitle" placeholder="Task title..." class="input-field">
+                <textarea id="taskDescription" placeholder="Task description..." class="input-field"></textarea>
+                <div class="priority-selector">
+                    <label>Priority:</label>
+                    <select id="taskPriority" class="input-field">
+                        <option value="low">Low</option>
+                        <option value="medium" selected>Medium</option>
+                        <option value="high">High</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeAddTaskModal()">Cancel</button>
+                <button class="btn-save" onclick="saveTask()">Save Task</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Deadline Modal -->
+    <div id="addDeadlineModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Deadline</h2>
+                <button class="close-btn" onclick="closeAddDeadlineModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="deadlineTitle" placeholder="Deadline title..." class="input-field">
+                <input type="date" id="deadlineDate" class="input-field">
+                <input type="time" id="deadlineTime" class="input-field">
+                <textarea id="deadlineDescription" placeholder="Description..." class="input-field"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeAddDeadlineModal()">Cancel</button>
+                <button class="btn-save" onclick="saveDeadline()">Save Deadline</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Note Modal -->
+    <div id="addNoteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add New Note</h2>
+                <button class="close-btn" onclick="closeAddNoteModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="text" id="noteTitle" placeholder="Note title..." class="input-field">
+                <textarea id="noteContent" placeholder="Your notes here..." class="input-field" style="min-height: 200px;"></textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-cancel" onclick="closeAddNoteModal()">Cancel</button>
+                <button class="btn-save" onclick="saveNote()">Save Note</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
