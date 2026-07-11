@@ -1,0 +1,36 @@
+import { Filesystem, Directory } from '@capacitor/filesystem';
+
+async function saveProgress() {
+  try {
+    const data = JSON.stringify(state);
+    await Filesystem.writeFile({
+      path: 'planner_progress.json',
+      data: data,
+      directory: Directory.Documents,
+      encoding: 'utf-8'
+    });
+    console.log('Progress saved!');
+  } catch (e) {
+    console.error('Save error:', e);
+  }
+}
+
+async function loadProgress() {
+  try {
+    const result = await Filesystem.readFile({
+      path: 'planner_progress.json',
+      directory: Directory.Documents,
+      encoding: 'utf-8'
+    });
+    const savedState = JSON.parse(result.data);
+    Object.assign(state, savedState);
+    renderHome();
+    console.log('Progress loaded!');
+  } catch (e) {
+    console.log('No saved progress found');
+  }
+}
+
+window.saveProgress = saveProgress;
+window.loadProgress = loadProgress;
+loadProgress();
