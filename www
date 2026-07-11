@@ -1,1 +1,1135 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time's Up — Study App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14161b;
+    --surface:#1d2027;
+    --surface-2:#262a33;
+    --surface-3:#2f3440;
+    --text:#edeae2;
+    --text-dim:#9a9fac;
+    --border:#33384418;
+    --line:#333844;
+    --heavy:#e4572e;
+    --heavy-dim:#e4572e26;
+    --moderate:#f2b134;
+    --moderate-dim:#f2b13426;
+    --light:#4fb477;
+    --light-dim:#4fb47726;
+    --go:#4fb477;
+    --go-text:#0d1510;
+    --danger:#e4572e;
+    --radius:18px;
+  }
+  [data-theme="light"]{
+    --bg:#f4f2ec;
+    --surface:#ffffff;
+    --surface-2:#eeece4;
+    --surface-3:#e4e1d6;
+    --text:#1b1d22;
+    --text-dim:#6b7178;
+    --line:#ddd9cd;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:#0a0b0d;
+    font-family:'Inter',sans-serif;
+    color:var(--text);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:32px 12px;
+  }
+  .page-wrap{ display:flex; flex-direction:column; align-items:center; }
+  h1,h2,h3,.display{ font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:0.02em; }
+  .mono{ font-family:'JetBrains Mono',monospace; }
+
+  .phone{
+    width:390px;
+    height:844px;
+    background:var(--bg);
+    border-radius:44px;
+    border:8px solid #000;
+    box-shadow:0 30px 80px rgba(0,0,0,0.5);
+    position:relative;
+    overflow:hidden;
+  }
+  .notch{
+    position:absolute; top:0; left:50%; transform:translateX(-50%);
+    width:150px; height:26px; background:#000; border-radius:0 0 16px 16px; z-index:50;
+  }
+  .screen{
+    position:absolute; inset:0;
+    display:none; flex-direction:column;
+    padding:44px 20px 20px;
+    overflow-y:auto;
+  }
+  .screen.active{ display:flex; }
+  .screen::-webkit-scrollbar{ width:0; }
+
+  /* ---------- shared bits ---------- */
+  .topbar{ display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%;
+    background:var(--surface); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center;
+    cursor:pointer; color:var(--text); flex-shrink:0;
+  }
+  .icon-btn:active{ transform:scale(0.94); }
+  .app-title{ font-size:20px; font-weight:700; letter-spacing:0.06em; }
+  .app-title span{ color:var(--go); }
+
+  .btn{
+    border:none; border-radius:14px; padding:15px 18px;
+    font-family:'Inter',sans-serif; font-weight:600; font-size:15px;
+    cursor:pointer; text-align:center;
+  }
+  .btn:active{ transform:scale(0.98); }
+  .btn-go{ background:var(--go); color:var(--go-text); }
+  .btn-go[disabled]{ background:var(--surface-3); color:var(--text-dim); cursor:not-allowed; }
+  .btn-ghost{ background:var(--surface); color:var(--text); border:1px solid var(--line); }
+  .btn-outline-danger{ background:transparent; color:var(--heavy); border:1px solid var(--heavy); }
+
+  .card{ background:var(--surface); border:1px solid var(--line); border-radius:var(--radius); padding:16px; }
+
+  .tag{
+    display:inline-flex; align-items:center; gap:6px;
+    font-size:11px; font-weight:700; letter-spacing:0.08em; text-transform:uppercase;
+    padding:4px 10px; border-radius:20px;
+  }
+  .dot{ width:7px; height:7px; border-radius:50%; }
+
+  .tier-heavy{ color:var(--heavy); background:var(--heavy-dim); }
+  .tier-moderate{ color:var(--moderate); background:var(--moderate-dim); }
+  .tier-light{ color:var(--light); background:var(--light-dim); }
+
+  /* ---------- home ---------- */
+  .ring-wrap{ display:flex; flex-direction:column; align-items:center; margin:10px 0 24px; }
+  .ring-label{ color:var(--text-dim); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; margin-top:10px; }
+  .ring-pct{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:34px; }
+  .day-pill-row{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:16px; }
+  .day-pill{
+    padding:8px 13px; border-radius:8px;
+    font-size:12px; font-weight:700; background:var(--surface); color:var(--text-dim);
+    border:1px solid var(--line); cursor:pointer;
+  }
+  .day-pill.active{ background:var(--go); color:var(--go-text); border-color:var(--go); }
+
+  .progress-bar-outer{
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
+    height:10px; overflow:hidden; margin-bottom:6px;
+  }
+  .progress-bar-inner{ height:100%; background:linear-gradient(90deg, var(--light), var(--go)); width:0%; transition:width 0.3s ease; }
+  .progress-bar-label{ color:var(--text-dim); font-size:12px; margin-bottom:16px; }
+
+  .today-list .block{
+    display:grid; grid-template-columns:64px 1fr auto; align-items:center; gap:12px;
+    background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--line);
+    border-radius:12px; padding:13px 14px; margin-bottom:9px;
+    transition:opacity 0.2s ease;
+  }
+  .today-list .block.tier-heavy{ border-left-color:var(--heavy); }
+  .today-list .block.tier-moderate{ border-left-color:var(--moderate); }
+  .today-list .block.tier-light{ border-left-color:var(--light); }
+  .today-list .block.done{ opacity:0.45; }
+  .today-list .block.done .subj-name{ text-decoration:line-through; }
+  .block-time{ font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--text-dim); line-height:1.3; }
+  .item-left{ display:flex; align-items:center; gap:10px; }
+  .check{
+    width:24px; height:24px; border-radius:50%; border:2px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0;
+  }
+  .check.checked{ background:var(--go); border-color:var(--go); color:var(--go-text); font-weight:700; }
+  .subj-name{ font-weight:600; font-size:14px; }
+  .break-divider{ text-align:center; color:var(--text-dim); font-size:11px; margin:2px 0 9px; letter-spacing:0.04em; }
+
+  .cz-row{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--line); border-left:4px solid var(--line);
+    border-radius:12px; padding:11px 12px; margin-bottom:9px;
+  }
+  .cz-row.tier-heavy{ border-left-color:var(--heavy); }
+  .cz-row.tier-moderate{ border-left-color:var(--moderate); }
+  .cz-row.tier-light{ border-left-color:var(--light); }
+  .cz-arrows{ display:flex; flex-direction:column; gap:3px; }
+  .cz-arrow{
+    width:26px; height:22px; border-radius:6px; background:var(--surface-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:11px; color:var(--text-dim);
+  }
+  .cz-arrow:active{ transform:scale(0.92); }
+  .cz-arrow.disabled{ opacity:0.3; pointer-events:none; }
+  .cz-main{ flex:1; min-width:0; }
+  .cz-name{ font-weight:600; font-size:14px; }
+  .cz-duration{ display:flex; align-items:center; gap:8px; flex-shrink:0; }
+  .cz-step{
+    width:26px; height:26px; border-radius:50%; background:var(--surface-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:15px; font-weight:700; color:var(--text);
+  }
+  .cz-step:active{ transform:scale(0.92); }
+  .cz-val{ font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; min-width:52px; text-align:center; }
+  .empty-state{
+    flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; gap:14px; padding:30px 10px;
+  }
+  .empty-state p{ color:var(--text-dim); font-size:13px; max-width:240px; }
+  .verse-block{
+    border-left:3px solid var(--go); padding:2px 0 2px 14px; margin:6px 0 4px; max-width:260px;
+  }
+  .verse-text{ font-family:'Oswald',sans-serif; font-size:15px; line-height:1.4; font-style:italic; }
+  .verse-ref{ color:var(--text-dim); font-size:11px; letter-spacing:0.06em; text-transform:uppercase; margin-top:6px; }
+  .home-actions{ display:flex; flex-direction:column; gap:10px; margin-top:auto; padding-top:14px; }
+
+  /* ---------- subject select ---------- */
+  .tier-block{ margin-bottom:20px; }
+  .tier-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .tier-title{ font-size:15px; font-weight:600; }
+  .subj-grid{ display:flex; flex-direction:column; gap:8px; }
+  .subj-row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:13px 14px; background:var(--surface); border:1px solid var(--line);
+    border-radius:12px; cursor:pointer;
+  }
+  .subj-row.selected{ border-color:var(--go); background:var(--light-dim); }
+  .helper-text{ color:var(--text-dim); font-size:12px; line-height:1.5; margin-bottom:16px; }
+  .footer-bar{ margin-top:auto; padding-top:14px; }
+  .footer-count{ text-align:center; color:var(--text-dim); font-size:12px; margin-bottom:10px; }
+
+  /* ---------- per-day count ---------- */
+  .count-tile{
+    background:var(--surface); border:1px solid var(--line); border-radius:16px;
+    padding:22px; margin-bottom:12px; cursor:pointer; text-align:center;
+  }
+  .count-tile.selected{ border-color:var(--go); background:var(--light-dim); }
+  .count-num{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:30px; }
+  .count-sub{ color:var(--text-dim); font-size:12px; margin-top:4px; }
+
+  /* ---------- timetable ---------- */
+  .tt-day{ margin-bottom:14px; }
+  .tt-day-head{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .tt-day-name{ font-weight:700; font-size:13px; letter-spacing:0.05em; }
+  .tt-chip-row{ display:flex; flex-wrap:wrap; gap:6px; }
+  .tt-chip{
+    font-size:11px; font-weight:600; padding:6px 10px; border-radius:20px;
+    background:var(--surface-2); border:1px solid var(--line);
+  }
+
+  /* ---------- settings ---------- */
+  .settings-section{ margin-bottom:22px; }
+  .settings-label{ font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:10px; }
+  .segmented{ display:flex; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:4px; }
+  .segmented div{ flex:1; text-align:center; padding:9px 0; font-size:13px; font-weight:600; border-radius:9px; cursor:pointer; color:var(--text-dim); }
+  .segmented div.active{ background:var(--go); color:var(--go-text); }
+  .row-between{ display:flex; align-items:center; justify-content:space-between; }
+  .switch{ width:44px; height:26px; border-radius:20px; background:var(--surface-3); position:relative; cursor:pointer; flex-shrink:0; }
+  .switch.on{ background:var(--go); }
+  .switch::after{ content:''; position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%; background:#fff; transition:left 0.15s; }
+  .switch.on::after{ left:21px; }
+  .setting-row{ padding:14px; background:var(--surface); border:1px solid var(--line); border-radius:14px; margin-bottom:8px; }
+  .setting-title{ font-weight:600; font-size:14px; margin-bottom:2px; }
+  .setting-sub{ font-size:12px; color:var(--text-dim); }
+  .chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .duration-chip{
+    padding:8px 14px; border-radius:20px; background:var(--surface-2); border:1px solid var(--line);
+    font-size:12px; font-weight:600; cursor:pointer;
+  }
+  .duration-chip.active{ background:var(--go); color:var(--go-text); border-color:var(--go); }
+  .custom-input{
+    width:100%; margin-top:10px; padding:11px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--text); font-family:'Inter'; font-size:13px; display:none;
+  }
+  .app-check-row{ display:flex; align-items:center; gap:10px; padding:11px 0; border-bottom:1px solid var(--line); }
+  .app-check-row:last-child{ border-bottom:none; }
+  .about-line{ color:var(--text-dim); font-size:11px; line-height:1.6; margin-top:6px; }
+
+  /* ---------- focus active ---------- */
+  .focus-timer{ text-align:center; margin:40px 0 30px; }
+  .focus-num{ font-family:'JetBrains Mono',monospace; font-weight:700; font-size:56px; }
+  .focus-label{ color:var(--text-dim); font-size:12px; letter-spacing:0.1em; text-transform:uppercase; margin-top:6px; }
+  .blocked-list{ display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+  .blocked-item{ display:flex; align-items:center; justify-content:between; gap:8px; padding:12px 14px; background:var(--surface); border:1px solid var(--line); border-radius:12px; color:var(--text-dim); font-size:13px; font-weight:600; }
+
+  /* ---------- weekly report ---------- */
+  .report-hero{ display:flex; gap:10px; margin-bottom:18px; }
+  .report-card{ flex:1; background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:14px; }
+  .report-card .tag{ margin-bottom:8px; }
+  .report-subj{ font-size:16px; font-weight:700; font-family:'Oswald'; text-transform:uppercase; }
+  .bar-row{ margin-bottom:10px; }
+  .bar-top{ display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px; }
+  .bar-track{ height:8px; background:var(--surface-2); border-radius:6px; overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:6px; background:var(--go); }
+
+  .section-title{ font-size:22px; font-weight:700; margin-bottom:4px; }
+  .section-sub{ color:var(--text-dim); font-size:13px; margin-bottom:18px; }
+
+  /* ---------- plans ---------- */
+  .plan-switch-row{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:16px; padding-bottom:14px; border-bottom:1px solid var(--line);
+  }
+  .plan-name{ font-weight:700; font-size:14px; }
+  .plan-name-label{ color:var(--text-dim); font-size:10px; text-transform:uppercase; letter-spacing:0.08em; }
+  .link-btn{
+    background:none; border:none; color:var(--go); font-weight:600; font-size:12px;
+    cursor:pointer; padding:6px 0;
+  }
+  .plan-card{
+    display:flex; align-items:center; gap:10px;
+    background:var(--surface); border:1px solid var(--line); border-radius:14px;
+    padding:14px; margin-bottom:10px;
+  }
+  .plan-card.active{ border-color:var(--go); }
+  .plan-card-main{ flex:1; cursor:pointer; min-width:0; }
+  .plan-card-name{ font-weight:700; font-size:14px; }
+  .plan-active-tag{
+    background:var(--light-dim); color:var(--go); font-size:10px; font-weight:700;
+    padding:2px 8px; border-radius:10px; text-transform:uppercase; letter-spacing:0.05em; margin-left:6px;
+  }
+  .plan-card-sub{ color:var(--text-dim); font-size:12px; margin-top:3px; }
+  .plan-delete{
+    width:34px; height:34px; border-radius:10px; background:var(--surface-2); border:1px solid var(--line);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; flex-shrink:0; font-size:14px;
+  }
+  .plan-delete:active{ transform:scale(0.92); }
+
+  .app-footer{
+    text-align:center; color:#5c6270; font-size:12px; font-weight:600;
+    letter-spacing:0.03em; margin-top:22px;
+  }
+
+  /* ---------- name plan modal ---------- */
+  .modal-backdrop{
+    position:absolute; inset:0; background:rgba(0,0,0,0.6);
+    display:none; align-items:center; justify-content:center; z-index:100; padding:24px;
+  }
+  .modal-backdrop.open{ display:flex; }
+  .modal-card{
+    background:var(--surface); border:1px solid var(--line); border-radius:18px;
+    padding:22px; width:100%; max-width:300px;
+  }
+  .modal-title{ font-size:17px; font-weight:700; margin-bottom:4px; }
+  .modal-sub{ color:var(--text-dim); font-size:12px; margin-bottom:14px; }
+  .modal-input{
+    width:100%; padding:12px 13px; border-radius:10px; border:1px solid var(--line);
+    background:var(--surface-2); color:var(--text); font-family:'Inter'; font-size:14px; margin-bottom:16px;
+  }
+  .modal-actions{ display:flex; gap:8px; }
+  .modal-actions .btn{ flex:1; padding:12px; font-size:13px; }
+</style>
+</head>
+<body>
+
+<div class="page-wrap">
+<div class="phone">
+  <div class="notch"></div>
+
+  <!-- HOME -->
+  <div class="screen active" id="screen-home">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-settings')">⚙</div>
+      <div class="app-title">TIME'S <span>UP</span></div>
+      <div class="icon-btn" onclick="startFocusFromHome()">◷</div>
+    </div>
+
+    <div id="home-has-plan" style="display:none; flex-direction:column; flex:1;">
+      <div class="plan-switch-row">
+        <div>
+          <div class="plan-name-label">Current plan</div>
+          <div class="plan-name" id="active-plan-name">—</div>
+        </div>
+        <button class="link-btn" onclick="goTo('screen-plans')">Manage plans</button>
+      </div>
+
+      <div class="day-pill-row" id="home-day-pills"></div>
+
+      <div id="progress-bar-wrap"></div>
+
+      <div class="today-list" id="today-list"></div>
+
+      <div class="home-actions" id="report-action"></div>
+    </div>
+
+    <div id="home-no-plan" class="empty-state">
+      <h2 style="font-size:20px;">No study plan yet</h2>
+      <div class="verse-block">
+        <div class="verse-text">"Lazy people are soon poor; hard workers get rich."</div>
+        <div class="verse-ref">Proverbs 10:4, NLT</div>
+      </div>
+      <p>Pick your subjects and build a weekly timetable to start tracking progress.</p>
+      <button class="btn btn-go" style="width:100%;" onclick="startNewPlan()">Build my study plan</button>
+      <button class="link-btn" id="view-saved-plans-link" style="display:none;" onclick="goTo('screen-plans')">View saved plans</button>
+    </div>
+  </div>
+
+  <!-- MY PLANS -->
+  <div class="screen" id="screen-plans">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-home')">←</div>
+      <div class="app-title">MY PLANS</div>
+      <div style="width:38px;"></div>
+    </div>
+    <div id="plans-list"></div>
+    <div class="footer-bar">
+      <button class="btn btn-go" style="width:100%;" onclick="startNewPlan()">+ New plan</button>
+    </div>
+  </div>
+
+  <!-- SUBJECT SELECT -->
+  <div class="screen" id="screen-subjects">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-home')">←</div>
+      <div class="app-title">CHOOSE SUBJECTS</div>
+      <div style="width:38px;"></div>
+    </div>
+    <p class="helper-text">Subjects are grouped by effort. For a balanced week, pick one or two subjects from each tier.</p>
+    <div id="tier-container"></div>
+    <div class="footer-bar">
+      <div class="footer-count" id="select-count">0 subjects selected</div>
+      <button class="btn btn-go" style="width:100%;" id="continue-btn" disabled onclick="goTo('screen-perday')">Continue</button>
+    </div>
+  </div>
+
+  <!-- PER DAY COUNT -->
+  <div class="screen" id="screen-perday">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-subjects')">←</div>
+      <div class="app-title">DAILY LOAD</div>
+      <div style="width:38px;"></div>
+    </div>
+    <p class="helper-text">How many subjects do you want to study per day? This spreads your selected subjects across the week.</p>
+    <div id="perday-tiles"></div>
+    <div class="footer-bar">
+      <button class="btn btn-go" style="width:100%;" id="build-btn" disabled onclick="goTo('screen-customize')">Continue</button>
+    </div>
+  </div>
+
+  <!-- CUSTOMIZE: durations + order -->
+  <div class="screen" id="screen-customize">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-perday')">←</div>
+      <div class="app-title">CUSTOMIZE</div>
+      <div style="width:38px;"></div>
+    </div>
+    <p class="helper-text">Each tier has a default study length — heavy 2 hours, moderate 1 hour, light 30 minutes. Adjust any subject's time, and reorder the list to change how subjects are arranged in your timetable.</p>
+    <div id="customize-list"></div>
+    <div class="footer-bar">
+      <button class="btn btn-go" style="width:100%;" onclick="buildAndShowTimetable()">Build my timetable</button>
+    </div>
+  </div>
+
+  <!-- TIMETABLE (first build) -->
+  <div class="screen" id="screen-timetable">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-customize')">←</div>
+      <div class="app-title">YOUR WEEK</div>
+      <div style="width:38px;"></div>
+    </div>
+    <p class="helper-text">Here's your timetable for the week, Sunday through Saturday.</p>
+    <div id="timetable-container"></div>
+    <div class="footer-bar">
+      <button class="btn btn-go" style="width:100%;" onclick="openSaveModal()">Save and go home</button>
+    </div>
+  </div>
+
+  <!-- NAME PLAN MODAL -->
+  <div class="modal-backdrop" id="save-modal">
+    <div class="modal-card">
+      <div class="modal-title">Name your plan</div>
+      <div class="modal-sub">Give this study plan a name so you can find it later.</div>
+      <input type="text" class="modal-input" id="save-modal-input" maxlength="40" placeholder="e.g. Term 2 Plan">
+      <div class="modal-actions">
+        <button class="btn btn-ghost" onclick="closeSaveModal()">Cancel</button>
+        <button class="btn btn-go" onclick="confirmSaveModal()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEEKLY REPORT -->
+  <div class="screen" id="screen-report">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-home')">←</div>
+      <div class="app-title">WEEKLY REPORT</div>
+      <div style="width:38px;"></div>
+    </div>
+    <p class="section-sub">Based on what you've marked studied from Sunday to Saturday.</p>
+    <div class="report-hero">
+      <div class="report-card">
+        <div class="tag tier-light">Most studied</div>
+        <div class="report-subj" id="report-most">—</div>
+      </div>
+      <div class="report-card">
+        <div class="tag tier-heavy">Needs work</div>
+        <div class="report-subj" id="report-least">—</div>
+      </div>
+    </div>
+    <div id="report-bars"></div>
+  </div>
+
+  <!-- SETTINGS -->
+  <div class="screen" id="screen-settings">
+    <div class="topbar">
+      <div class="icon-btn" onclick="goTo('screen-home')">←</div>
+      <div class="app-title">SETTINGS</div>
+      <div style="width:38px;"></div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Theme</div>
+      <div class="segmented" id="theme-segmented">
+        <div data-v="light">Light</div>
+        <div data-v="dark">Dark</div>
+        <div data-v="system">System</div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Progress</div>
+      <div class="setting-row row-between">
+        <div>
+          <div class="setting-title">Show progress bar</div>
+          <div class="setting-sub">Displays the daily ring on your home screen</div>
+        </div>
+        <div class="switch on" id="toggle-progressbar" onclick="toggleSwitch('progressbar')"></div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Notifications</div>
+      <div class="setting-row">
+        <div class="row-between">
+          <div>
+            <div class="setting-title">Study reminders</div>
+            <div class="setting-sub" id="notif-status">Not enabled yet</div>
+          </div>
+          <button class="btn btn-ghost" style="padding:9px 14px; font-size:12px;" onclick="requestNotifPermission()">Enable</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <div class="settings-label">Focus mode</div>
+      <div class="setting-row row-between">
+        <div>
+          <div class="setting-title">Focus mode</div>
+          <div class="setting-sub">Blocks distracting apps while you study</div>
+        </div>
+        <div class="switch" id="toggle-focus" onclick="toggleSwitch('focus')"></div>
+      </div>
+
+      <div id="focus-config" style="display:none;">
+        <div class="setting-row">
+          <div class="setting-title" style="margin-bottom:8px;">Session length</div>
+          <div class="chip-row" id="duration-chips"></div>
+          <input type="number" class="custom-input" id="custom-duration" placeholder="Custom minutes (max 120)" min="1" max="120">
+        </div>
+        <div class="setting-row">
+          <div class="setting-title" style="margin-bottom:4px;">Apps to block</div>
+          <div id="app-block-list"></div>
+        </div>
+        <button class="btn btn-go" style="width:100%;" onclick="startFocusSession()">Start focus session</button>
+      </div>
+      <div class="about-line">This prototype simulates blocking with a locked list — it doesn't restrict real apps on your device. On iOS or Android, that part uses Screen Time or Digital Wellbeing APIs.</div>
+    </div>
+
+    <div class="about-line" style="margin-top:10px;">Data in this preview lives in memory for demo purposes. The real app should save progress with on-device storage, such as AsyncStorage, SharedPreferences, or a local SQLite database, so it survives app restarts.</div>
+  </div>
+
+  <!-- FOCUS ACTIVE -->
+  <div class="screen" id="screen-focus-active">
+    <div class="topbar">
+      <div style="width:38px;"></div>
+      <div class="app-title">FOCUS MODE</div>
+      <div style="width:38px;"></div>
+    </div>
+    <div class="focus-timer">
+      <div class="focus-num mono" id="focus-countdown">00:00</div>
+      <div class="focus-label">Time remaining</div>
+    </div>
+    <div class="settings-label">Locked for this session</div>
+    <div class="blocked-list" id="focus-blocked-list"></div>
+    <div class="footer-bar">
+      <button class="btn btn-outline-danger" style="width:100%;" onclick="endFocusSession()">End session early</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="app-footer">Powered by Mwewa🛡️</div>
+</div>
+
+<script>
+/* ---------------- data ---------------- */
+const TIERS = {
+  heavy:    { label:'Heavy',    effort:'High effort',   subjects:['Mathematics','Physics','Chemistry'] },
+  moderate: { label:'Moderate', effort:'Medium effort',  subjects:['English','Biology','Physical Education'] },
+  light:    { label:'Light',    effort:'Light effort',   subjects:['Civic Education','Food and Nutrition'] }
+};
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const REAL_TODAY = DAYS[new Date().getDay()]; // actual calendar day, used to gate the weekly report
+const APP_OPTIONS = ['Instagram','TikTok','YouTube','X (Twitter)','Mobile games'];
+const DURATIONS = [15,30,45,60,90,120];
+const TIER_DEFAULT_MIN = { heavy:120, moderate:60, light:30 }; // heavy 2h, moderate 1h, light 30 min
+
+/* ---------------- state (in-memory for this demo) ---------------- */
+let state = {
+  theme: 'system',
+  plans: [],               // saved study plans: { id, name, selected, subjectOrder, customDurations, perDay, schedule, progress }
+  activePlanId: null,
+  selected: [],
+  perDay: null,
+  subjectOrder: [],       // user-arranged order of selected subjects, drives schedule rotation
+  customDurations: {},    // { Mathematics: 120, ... } minutes per subject, defaults from tier
+  schedule: null,
+  progress: {},           // { Sun: {Mathematics:true, ...}, ... }
+  progressBarOn: true,
+  notifStatus: 'Not enabled yet',
+  focusOn: false,
+  focusDuration: 30,
+  focusApps: [],
+  currentDay: DAYS[new Date().getDay()],
+  timerInterval: null,
+  timerSecondsLeft: 0
+};
+
+function tierOf(subject){
+  for(const key in TIERS){ if(TIERS[key].subjects.includes(subject)) return key; }
+  return 'light';
+}
+
+/* ---------------- navigation ---------------- */
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  if(id==='screen-home') renderHome();
+  if(id==='screen-customize') renderCustomize();
+  if(id==='screen-plans') renderPlans();
+  if(id==='screen-settings') renderSettings();
+}
+
+/* ---------------- subject select screen ---------------- */
+function renderSubjectSelect(){
+  const container = document.getElementById('tier-container');
+  container.innerHTML = '';
+  Object.keys(TIERS).forEach(key=>{
+    const tier = TIERS[key];
+    const block = document.createElement('div');
+    block.className = 'tier-block';
+    block.innerHTML = `
+      <div class="tier-head">
+        <div class="tier-title">${tier.label}</div>
+        <div class="tag tier-${key}"><span class="dot" style="background:var(--${key})"></span>${tier.effort}</div>
+      </div>
+      <div class="subj-grid">
+        ${tier.subjects.map(s=>`
+          <div class="subj-row ${state.selected.includes(s)?'selected':''}" onclick="toggleSubject('${s}')">
+            <span class="subj-name">${s}</span>
+            <div class="check ${state.selected.includes(s)?'checked':''}">${state.selected.includes(s)?'✓':''}</div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+    container.appendChild(block);
+  });
+  updateSelectFooter();
+}
+function toggleSubject(s){
+  const i = state.selected.indexOf(s);
+  if(i>-1) state.selected.splice(i,1); else state.selected.push(s);
+  renderSubjectSelect();
+}
+function updateSelectFooter(){
+  const count = state.selected.length;
+  document.getElementById('select-count').textContent = count===1 ? '1 subject selected' : `${count} subjects selected`;
+  document.getElementById('continue-btn').disabled = count===0;
+}
+
+/* ---------------- per-day count screen ---------------- */
+function renderPerDay(){
+  const container = document.getElementById('perday-tiles');
+  container.innerHTML = [3,4,5,7].map(n=>`
+    <div class="count-tile ${state.perDay===n?'selected':''}" onclick="selectPerDay(${n})">
+      <div class="count-num mono">${n}</div>
+      <div class="count-sub">subjects per day</div>
+    </div>
+  `).join('');
+  document.getElementById('build-btn').disabled = !state.perDay;
+}
+function selectPerDay(n){
+  state.perDay = n;
+  renderPerDay();
+}
+
+/* ---------------- schedule builder ---------------- */
+function buildSchedule(selected, perDay){
+  // group selected subjects by tier, keeping the user's pick order within each tier
+  const tierGroups = {};
+  Object.keys(TIERS).forEach(k=>{ tierGroups[k] = selected.filter(s=>tierOf(s)===k); });
+  const activeTiers = Object.keys(tierGroups).filter(k=>tierGroups[k].length>0);
+  const pointers = {}; activeTiers.forEach(k=>pointers[k]=0);
+  const schedule = {};
+
+  DAYS.forEach((d, dayIdx)=>{
+    if(activeTiers.length===0){ schedule[d]=[]; return; }
+
+    // rotate which tier gets priority each day, so the same tier doesn't
+    // always soak up the extra slot
+    const shift = dayIdx % activeTiers.length;
+    const order = activeTiers.slice(shift).concat(activeTiers.slice(0, shift));
+
+    const slotsToday = Math.min(perDay, selected.length);
+    const counts = {}; order.forEach(k=>counts[k]=0);
+    let remaining = slotsToday, guard = 0;
+    while(remaining>0 && guard < order.length*20){
+      const tier = order[guard % order.length];
+      if(counts[tier] < tierGroups[tier].length){
+        counts[tier]++;
+        remaining--;
+      }
+      guard++;
+    }
+
+    const dayList = [];
+    order.forEach(tier=>{
+      const list = tierGroups[tier];
+      const n = list.length;
+      const c = counts[tier];
+      for(let j=0;j<c;j++){
+        dayList.push(list[(pointers[tier]+j)%n]);
+      }
+      pointers[tier] = (pointers[tier] + c) % n;
+    });
+    schedule[d] = dayList;
+  });
+  return schedule;
+}
+function buildAndShowTimetable(){
+  state.schedule = buildSchedule(state.subjectOrder, state.perDay);
+  state.progress = {};
+  DAYS.forEach(d=>{ state.progress[d] = {}; });
+  renderTimetable('timetable-container');
+  goTo('screen-timetable');
+}
+
+/* ---------------- customize screen: durations + reorder ---------------- */
+function formatDuration(minutes){
+  const h = Math.floor(minutes/60), m = minutes%60;
+  if(h===0) return `${m} min`;
+  return m===0 ? `${h}h` : `${h}h ${m}m`;
+}
+function renderCustomize(){
+  // keep existing order for subjects still selected, append any newly added ones
+  state.subjectOrder = state.subjectOrder.filter(s=>state.selected.includes(s));
+  state.selected.forEach(s=>{ if(!state.subjectOrder.includes(s)) state.subjectOrder.push(s); });
+  // default duration for any subject that doesn't have a custom one yet
+  state.subjectOrder.forEach(s=>{
+    if(state.customDurations[s]===undefined) state.customDurations[s] = TIER_DEFAULT_MIN[tierOf(s)];
+  });
+
+  const container = document.getElementById('customize-list');
+  container.innerHTML = state.subjectOrder.map((s,i)=>{
+    const tier = tierOf(s);
+    const mins = state.customDurations[s];
+    return `
+      <div class="cz-row tier-${tier}">
+        <div class="cz-arrows">
+          <div class="cz-arrow ${i===0?'disabled':''}" onclick="moveSubject('${s}',-1)">▲</div>
+          <div class="cz-arrow ${i===state.subjectOrder.length-1?'disabled':''}" onclick="moveSubject('${s}',1)">▼</div>
+        </div>
+        <div class="cz-main">
+          <div class="cz-name">${s}</div>
+          <div class="tag tier-${tier}" style="margin-top:4px;"><span class="dot" style="background:var(--${tier})"></span>${TIERS[tier].label}</div>
+        </div>
+        <div class="cz-duration">
+          <div class="cz-step" onclick="changeDuration('${s}',-15)">−</div>
+          <div class="cz-val">${formatDuration(mins)}</div>
+          <div class="cz-step" onclick="changeDuration('${s}',15)">+</div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+function moveSubject(subject, dir){
+  const i = state.subjectOrder.indexOf(subject);
+  const j = i + dir;
+  if(j<0 || j>=state.subjectOrder.length) return;
+  [state.subjectOrder[i], state.subjectOrder[j]] = [state.subjectOrder[j], state.subjectOrder[i]];
+  renderCustomize();
+}
+function changeDuration(subject, delta){
+  const next = (state.customDurations[subject]||15) + delta;
+  state.customDurations[subject] = Math.max(15, Math.min(240, next));
+  renderCustomize();
+}
+
+/* ---------------- timetable render ---------------- */
+function renderTimetable(containerId){
+  const container = document.getElementById(containerId);
+  if(!state.schedule){ container.innerHTML = '<p class="helper-text">No timetable yet.</p>'; return; }
+  container.innerHTML = DAYS.map(d=>`
+    <div class="tt-day">
+      <div class="tt-day-head">
+        <div class="tt-day-name">${d==state.currentDay ? d+' · TODAY' : d}</div>
+      </div>
+      <div class="tt-chip-row">
+        ${state.schedule[d].map(s=>`<div class="tt-chip" style="border-color:var(--${tierOf(s)})">${s}</div>`).join('')}
+      </div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- home screen ---------------- */
+function renderHome(){
+  const hasPlan = document.getElementById('home-has-plan');
+  const noPlan = document.getElementById('home-no-plan');
+  const savedLink = document.getElementById('view-saved-plans-link');
+
+  // fall back to another saved plan if the active one was deleted or none is set
+  if(!state.schedule && state.plans.length>0){
+    loadPlan(state.plans[0].id);
+  }
+
+  if(!state.schedule){
+    hasPlan.style.display = 'none';
+    noPlan.style.display = 'flex';
+    savedLink.style.display = state.plans.length>0 ? 'block' : 'none';
+    return;
+  }
+  hasPlan.style.display = 'flex';
+  noPlan.style.display = 'none';
+
+  const activePlan = state.plans.find(p=>p.id===state.activePlanId);
+  document.getElementById('active-plan-name').textContent = activePlan ? activePlan.name : 'Untitled plan';
+
+  // day pills
+  const pillRow = document.getElementById('home-day-pills');
+  pillRow.innerHTML = DAYS.map(d=>`
+    <div class="day-pill ${d===state.currentDay?'active':''}" onclick="setCurrentDay('${d}')">${d}</div>
+  `).join('');
+
+  // blocks for today, with time slots
+  const blocks = getDayBlocks(state.currentDay);
+  const doneCount = blocks.filter(b=>state.progress[state.currentDay] && state.progress[state.currentDay][b.subject]).length;
+  const pct = blocks.length ? Math.round((doneCount/blocks.length)*100) : 0;
+
+  const barWrap = document.getElementById('progress-bar-wrap');
+  if(state.progressBarOn){
+    barWrap.style.display = 'block';
+    barWrap.innerHTML = `
+      <div class="progress-bar-outer"><div class="progress-bar-inner" style="width:${pct}%"></div></div>
+      <div class="progress-bar-label">${doneCount} of ${blocks.length} subjects complete (${pct}%) — ${state.currentDay}</div>
+    `;
+  } else {
+    barWrap.style.display = 'none';
+  }
+
+  // today list, styled as tappable time blocks with breaks between
+  const list = document.getElementById('today-list');
+  if(blocks.length===0){
+    list.innerHTML = '<p class="helper-text">No subjects scheduled for this day.</p>';
+  } else {
+    let html = '';
+    blocks.forEach((b)=>{
+      const done = state.progress[state.currentDay] && state.progress[state.currentDay][b.subject];
+      html += `
+        <div class="block tier-${b.tier} ${done?'done':''}" onclick="toggleProgress('${b.subject}')">
+          <div class="block-time">${b.duration}</div>
+          <div>
+            <div class="subj-name">${b.subject}</div>
+            <div class="tag tier-${b.tier}" style="margin-top:4px;"><span class="dot" style="background:var(--${b.tier})"></span>${TIERS[b.tier].label}</div>
+          </div>
+          <div class="check ${done?'checked':''}">${done?'✓':''}</div>
+        </div>
+      `;
+    });
+    list.innerHTML = html;
+  }
+
+  // weekly report only unlocks on Saturday, the end of the Sun–Sat week
+  const reportEl = document.getElementById('report-action');
+  if(REAL_TODAY === 'Sat'){
+    reportEl.innerHTML = `<button class="btn btn-ghost" onclick="renderWeeklyReport(); goTo('screen-report')">View weekly report</button>`;
+  } else {
+    const daysToGo = (6 - DAYS.indexOf(REAL_TODAY) + 7) % 7;
+    reportEl.innerHTML = `
+      <div class="setting-row" style="text-align:center;">
+        <div class="setting-title">Weekly report</div>
+        <div class="setting-sub">Unlocks Saturday · ${daysToGo} day${daysToGo===1?'':'s'} to go</div>
+      </div>
+    `;
+  }
+}
+
+/* ---------------- time block helpers ---------------- */
+function getDayBlocks(day){
+  if(!state.schedule || !state.schedule[day]) return [];
+  return state.schedule[day].map(s=>{
+    const tier = tierOf(s);
+    const mins = state.customDurations[s] !== undefined ? state.customDurations[s] : TIER_DEFAULT_MIN[tier];
+    return { subject:s, tier, duration: formatDuration(mins) };
+  });
+}
+function setCurrentDay(d){
+  state.currentDay = d;
+  renderHome();
+}
+function toggleProgress(subject){
+  if(!state.progress[state.currentDay]) state.progress[state.currentDay] = {};
+  state.progress[state.currentDay][subject] = !state.progress[state.currentDay][subject];
+  persistActivePlan();
+  renderHome();
+}
+
+/* ---------------- plan management ---------------- */
+function startNewPlan(){
+  state.activePlanId = null;
+  state.selected = [];
+  state.perDay = null;
+  state.subjectOrder = [];
+  state.customDurations = {};
+  state.schedule = null;
+  state.progress = {};
+  renderSubjectSelect();
+  goTo('screen-subjects');
+}
+function openSaveModal(){
+  const suggested = 'Plan ' + (state.plans.length + 1);
+  const input = document.getElementById('save-modal-input');
+  input.value = suggested;
+  document.getElementById('save-modal').classList.add('open');
+  input.focus();
+  input.select();
+}
+function closeSaveModal(){
+  document.getElementById('save-modal').classList.remove('open');
+}
+function confirmSaveModal(){
+  const input = document.getElementById('save-modal-input');
+  const suggested = 'Plan ' + (state.plans.length + 1);
+  const name = input.value.trim() || suggested;
+  saveCurrentAsPlan(name);
+  closeSaveModal();
+  goTo('screen-home');
+}
+function saveCurrentAsPlan(name){
+  const plan = {
+    id: 'plan_' + Date.now(),
+    name,
+    selected: [...state.selected],
+    subjectOrder: [...state.subjectOrder],
+    customDurations: {...state.customDurations},
+    perDay: state.perDay,
+    schedule: JSON.parse(JSON.stringify(state.schedule)),
+    progress: JSON.parse(JSON.stringify(state.progress))
+  };
+  state.plans.push(plan);
+  state.activePlanId = plan.id;
+}
+function persistActivePlan(){
+  const plan = state.plans.find(p=>p.id===state.activePlanId);
+  if(!plan) return;
+  plan.selected = [...state.selected];
+  plan.subjectOrder = [...state.subjectOrder];
+  plan.customDurations = {...state.customDurations};
+  plan.perDay = state.perDay;
+  plan.schedule = JSON.parse(JSON.stringify(state.schedule));
+  plan.progress = JSON.parse(JSON.stringify(state.progress));
+}
+function loadPlan(id){
+  const plan = state.plans.find(p=>p.id===id);
+  if(!plan) return;
+  state.activePlanId = plan.id;
+  state.selected = [...plan.selected];
+  state.subjectOrder = [...plan.subjectOrder];
+  state.customDurations = {...plan.customDurations};
+  state.perDay = plan.perDay;
+  state.schedule = JSON.parse(JSON.stringify(plan.schedule));
+  state.progress = JSON.parse(JSON.stringify(plan.progress));
+}
+function switchToPlan(id){
+  loadPlan(id);
+  goTo('screen-home');
+}
+function deletePlan(id){
+  const plan = state.plans.find(p=>p.id===id);
+  if(!plan) return;
+  if(!confirm(`Delete "${plan.name}"? This can't be undone.`)) return;
+  state.plans = state.plans.filter(p=>p.id!==id);
+  if(state.activePlanId===id){
+    if(state.plans.length>0){
+      loadPlan(state.plans[0].id);
+    } else {
+      state.activePlanId = null;
+      state.selected = [];
+      state.perDay = null;
+      state.subjectOrder = [];
+      state.customDurations = {};
+      state.schedule = null;
+      state.progress = {};
+    }
+  }
+  renderPlans();
+}
+function renderPlans(){
+  const container = document.getElementById('plans-list');
+  if(state.plans.length===0){
+    container.innerHTML = '<p class="helper-text">No saved plans yet. Build one to see it here.</p>';
+    return;
+  }
+  container.innerHTML = state.plans.map(p=>{
+    const active = p.id===state.activePlanId;
+    const count = p.selected.length;
+    return `
+      <div class="plan-card ${active?'active':''}">
+        <div class="plan-card-main" onclick="switchToPlan('${p.id}')">
+          <div class="plan-card-name">${p.name}${active?'<span class="plan-active-tag">Active</span>':''}</div>
+          <div class="plan-card-sub">${count} subject${count===1?'':'s'} · ${p.perDay}/day</div>
+        </div>
+        <div class="plan-delete" onclick="deletePlan('${p.id}')">🗑</div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ---------------- weekly report ---------------- */
+function renderWeeklyReport(){
+  if(!state.schedule) return;
+  const counts = {};
+  state.selected.forEach(s=>counts[s]=0);
+  DAYS.forEach(d=>{
+    const dayProg = state.progress[d] || {};
+    Object.keys(dayProg).forEach(s=>{ if(dayProg[s]) counts[s] = (counts[s]||0)+1; });
+  });
+  const subjects = Object.keys(counts);
+  let most = subjects[0], least = subjects[0];
+  subjects.forEach(s=>{
+    if(counts[s] > counts[most]) most = s;
+    if(counts[s] < counts[least]) least = s;
+  });
+  document.getElementById('report-most').textContent = subjects.length ? most : '—';
+  document.getElementById('report-least').textContent = subjects.length ? least : '—';
+
+  const maxVal = Math.max(1, ...subjects.map(s=>counts[s]));
+  document.getElementById('report-bars').innerHTML = subjects.map(s=>`
+    <div class="bar-row">
+      <div class="bar-top"><span>${s}</span><span class="text-dim mono">${counts[s]}×</span></div>
+      <div class="bar-track"><div class="bar-fill" style="width:${(counts[s]/maxVal)*100}%; background:var(--${tierOf(s)})"></div></div>
+    </div>
+  `).join('');
+}
+
+/* ---------------- settings ---------------- */
+function renderSettings(){
+  document.querySelectorAll('#theme-segmented div').forEach(el=>{
+    el.classList.toggle('active', el.dataset.v===state.theme);
+    el.onclick = ()=>{ setTheme(el.dataset.v); };
+  });
+  document.getElementById('toggle-progressbar').classList.toggle('on', state.progressBarOn);
+  document.getElementById('toggle-focus').classList.toggle('on', state.focusOn);
+  document.getElementById('focus-config').style.display = state.focusOn ? 'block' : 'none';
+  document.getElementById('notif-status').textContent = state.notifStatus;
+
+  document.getElementById('duration-chips').innerHTML = DURATIONS.map(m=>`
+    <div class="duration-chip ${state.focusDuration===m?'active':''}" onclick="pickDuration(${m})">${m<60?m+' min':(m/60)+' hr'}</div>
+  `).join('') + `<div class="duration-chip ${state.focusDuration==='custom'?'active':''}" onclick="pickDuration('custom')">Custom</div>`;
+  document.getElementById('custom-duration').style.display = state.focusDuration==='custom' ? 'block' : 'none';
+
+  document.getElementById('app-block-list').innerHTML = APP_OPTIONS.map(a=>`
+    <div class="app-check-row">
+      <div class="check ${state.focusApps.includes(a)?'checked':''}" onclick="toggleFocusApp('${a}')">${state.focusApps.includes(a)?'✓':''}</div>
+      <div>${a}</div>
+    </div>
+  `).join('');
+}
+function setTheme(v){
+  state.theme = v;
+  applyTheme();
+  renderSettings();
+}
+function applyTheme(){
+  let effective = state.theme;
+  if(state.theme==='system'){
+    effective = window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  document.documentElement.setAttribute('data-theme', effective==='light' ? 'light' : '');
+}
+function toggleSwitch(which){
+  if(which==='progressbar'){ state.progressBarOn = !state.progressBarOn; }
+  if(which==='focus'){ state.focusOn = !state.focusOn; }
+  renderSettings();
+}
+function pickDuration(m){
+  state.focusDuration = m;
+  renderSettings();
+  if(m==='custom') document.getElementById('custom-duration').focus();
+}
+function toggleFocusApp(a){
+  const i = state.focusApps.indexOf(a);
+  if(i>-1) state.focusApps.splice(i,1); else state.focusApps.push(a);
+  renderSettings();
+}
+function requestNotifPermission(){
+  if(!('Notification' in window)){
+    state.notifStatus = 'Not supported in this browser';
+    renderSettings();
+    return;
+  }
+  Notification.requestPermission().then(perm=>{
+    state.notifStatus = perm==='granted' ? 'Enabled' : 'Permission denied';
+    renderSettings();
+  });
+}
+
+/* ---------------- focus mode ---------------- */
+function startFocusFromHome(){
+  goTo('screen-settings');
+  if(!state.focusOn){ state.focusOn = true; }
+  renderSettings();
+}
+function startFocusSession(){
+  let minutes = state.focusDuration;
+  if(minutes==='custom'){
+    minutes = parseInt(document.getElementById('custom-duration').value, 10);
+    if(!minutes || minutes<1 || minutes>120){ alert('Enter a custom time between 1 and 120 minutes.'); return; }
+  }
+  state.timerSecondsLeft = minutes*60;
+  document.getElementById('focus-blocked-list').innerHTML = state.focusApps.length
+    ? state.focusApps.map(a=>`<div class="blocked-item">🔒 ${a}</div>`).join('')
+    : '<div class="blocked-item">No apps selected to block</div>';
+  goTo('screen-focus-active');
+  tickFocus();
+  state.timerInterval = setInterval(tickFocus, 1000);
+}
+function tickFocus(){
+  const m = Math.floor(state.timerSecondsLeft/60).toString().padStart(2,'0');
+  const s = (state.timerSecondsLeft%60).toString().padStart(2,'0');
+  document.getElementById('focus-countdown').textContent = `${m}:${s}`;
+  if(state.timerSecondsLeft<=0){
+    clearInterval(state.timerInterval);
+    alert('Focus session complete.');
+    goTo('screen-home');
+    return;
+  }
+  state.timerSecondsLeft--;
+}
+function endFocusSession(){
+  clearInterval(state.timerInterval);
+  goTo('screen-home');
+}
+
+/* ---------------- init ---------------- */
+applyTheme();
+renderSubjectSelect();
+renderPerDay();
+renderSettings();
+renderHome();
+</script>
+
+</body>
+</html>
